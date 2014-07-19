@@ -7,6 +7,11 @@ platform:
   - x64
   - x86
 
+branches:
+  only:
+    - master
+    - appveyor
+    
 install:
   - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:Platform
   - node --version
