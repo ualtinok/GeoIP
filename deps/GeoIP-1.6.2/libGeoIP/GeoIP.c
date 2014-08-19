@@ -37,9 +37,40 @@ static geoipv6_t IPV6_NULL;
 #include <sys/types.h> /* for fstat */
 #include <sys/stat.h>  /* for fstat */
 
-#ifdef HAVE_GETTIMEOFDAY
-#include <sys/time.h> /* for gettimeofday */
+
+
+
+#if defined(_MSC_VER)
+    #include <time.h>
+    #include <windows.h>
+
+    // The closest thing to gettimeofday in Windows is GetSystemTimeAsFileTime
+    // so stub out a gettimeofday() method that uses this
+    // NOTE: When I tested on Windows XP, it only gave me about 10ms accuracy
+    // (but at least it compiles)
+
+    struct timezone {
+        int  tz_minuteswest;
+        int  tz_dsttime;
+    };
+
+    int gettimeofday(struct timeval *tv, struct timezone *tz) {
+        FILETIME ft;
+        GetSystemTimeAsFileTime(&ft);
+        unsigned long long t = ft.dwHighDateTime;
+        t <<= 32;
+        t |= ft.dwLowDateTime;
+        t /= 10;
+        t -= 11644473600000000ULL;
+        tv->tv_sec = (long) (t / 1000000UL);
+        tv->tv_usec = (long) (t % 1000000UL);
+
+        return 0;
+    }
+#else
+    #include <sys/time.h>
 #endif
+
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>     /* For uint32_t */
